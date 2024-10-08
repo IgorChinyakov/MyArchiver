@@ -130,13 +130,11 @@ void archive_directory(const char *dir_path, const char *rel_path, FILE *archive
             archive_directory(file_path, relative_file_path, archive);
         } else {
             // Если это файл, сохраняем его метаданные и содержимое
-            // strncpy(header.file_name, relative_file_path, sizeof(header.file_name));
-            // header.file_size = file_stat.st_size;
-            //
-            // // Записываем заголовок файла (имя и размер)
-            // fwrite(&header, sizeof(header), 1, archive);
-            //
+            strncpy(header.file_name, relative_file_path, sizeof(header.file_name));
+            header.file_size = file_stat.st_size;
 
+            // Записываем заголовок файла (имя и размер)
+            fwrite(&header, sizeof(header), 1, archive);
 
             // Открываем файл для чтения и записываем его содержимое в архив
             input_file = fopen(file_path, "rb");
@@ -145,6 +143,11 @@ void archive_directory(const char *dir_path, const char *rel_path, FILE *archive
                 continue;
             }
 
+            // // Получаем размер сжатого файла
+            // fseek(input_file, 0, SEEK_END);
+            // file_size = ftell(input_file);
+            // fseek(input_file, 0, SEEK_SET);
+
             // Создаем временный файл для сжатых данных
             compressed_file = fopen(temp_compressed_file, "wb");
             if (compressed_file == NULL) {
@@ -152,6 +155,10 @@ void archive_directory(const char *dir_path, const char *rel_path, FILE *archive
                 fclose(input_file);
                 continue;
             }
+
+            // printf("Путь к файлу: %s", header.file_name);
+            // printf(" Размер: %ld", header.file_size);
+            // printf(" байт;\n");
 
             // Сжимаем содержимое файла
             compress_lzw(input_file, compressed_file);
@@ -168,14 +175,14 @@ void archive_directory(const char *dir_path, const char *rel_path, FILE *archive
             }
 
             // Получаем размер сжатого файла
-            fseek(compressed_file, 0, SEEK_END);
-            file_size = ftell(compressed_file);
-            fseek(compressed_file, 0, SEEK_SET);
+            // fseek(compressed_file, 0, SEEK_END);
+            // file_size = ftell(input_file);
+            // fseek(compressed_file, 0, SEEK_SET);
 
-            // Записываем заголовок файла
-            strncpy(header.file_name, relative_file_path, sizeof(header.file_name));
-            header.file_size = file_size;
-            fwrite(&header, sizeof(header), 1, archive);
+            // // Записываем заголовок файла
+            // strncpy(header.file_name, relative_file_path, sizeof(header.file_name));
+            // header.file_size = file_size;
+            // fwrite(&header, sizeof(header), 1, archive);
 
             printf("Путь к файлу: %s", header.file_name);
             printf(" Размер: %ld", header.file_size);
@@ -189,6 +196,9 @@ void archive_directory(const char *dir_path, const char *rel_path, FILE *archive
             }
 
             fclose(compressed_file);
+
+            // Удаляем временный файл
+            remove("archived_compressed_file.bin");
         }
     }
 
